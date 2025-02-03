@@ -2,6 +2,9 @@
   "name": "bytevault",
   "module": "index.ts",
   "type": "module",
+  "scripts": {
+    "start:server": "bun --watch run server/app.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },
