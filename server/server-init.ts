@@ -1,4 +1,5 @@
 import type { TCPSocketListener } from "bun";
+import { ServerConfiguration } from "./config/config";
 
 export class DatabaseServer {
   public server!: TCPSocketListener;
@@ -9,9 +10,12 @@ export class DatabaseServer {
    * @returns
    */
   public async startServer(): Promise<TCPSocketListener> {
+    const config = new ServerConfiguration();
+    await config.readConfig();
+
     this.server = Bun.listen({
-      hostname: "localhost",
-      port: 4000,
+      hostname: config.get("hostname", "localhost"),
+      port: +(config.get("port", "4000")),
       socket: {
         data(socket, data) {
           const input = data.toString().trim();
