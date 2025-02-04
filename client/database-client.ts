@@ -1,4 +1,5 @@
 import type { TCPSocket } from "bun";
+import { ClientConfiguration } from "./config/config";
 
 export class DatabaseClient {
   private socket!: TCPSocket;
@@ -11,12 +12,18 @@ export class DatabaseClient {
    */
   public async connectToServer(): Promise<void> {
     try {
+      const config = new ClientConfiguration();
+      await config.readConfig(); // Load configuration file
+
+      const hostname: string = config.get("hostname", "localhost");
+      const port: number = Number(config.get("port", "4000"));
+
       this.socket = await Bun.connect({
-        hostname: "localhost",
-        port: 4000,
+        hostname,
+        port,
         socket: {
           open: () => {
-            console.log("Client connected to server");
+            console.log(`Client connected to ${hostname}:${port}`);
           },
           data: (socket, data) => {
             console.log("Received data from server:", data.toString());
@@ -36,5 +43,3 @@ export class DatabaseClient {
     }
   }
 }
-
-
