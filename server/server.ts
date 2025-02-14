@@ -1,11 +1,12 @@
 import { DatabaseServer } from "./database-server";
+import LoggerService from "./utils/logger-service";
 
 const serverDB = new DatabaseServer();
 serverDB
   .startServer()
   .then((server) => {
-    console.log("server started on port:", server.port);
+    LoggerService.success(`Server started on port: ${server.port}`);
   })
   .catch((error) => {
-    console.log("error occured", error);
+    LoggerService.error(`Error occured: ${error}`);
   });
