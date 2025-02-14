@@ -1,6 +1,7 @@
 import type { Socket, TCPSocketListener } from "bun";
 import { ServerConfiguration } from "./config/config";
 import { MessageService } from "./sever-message";
+import LoggerService from "./utils/logger-service";
 
 export class DatabaseServer {
   public server!: TCPSocketListener;
@@ -21,17 +22,17 @@ export class DatabaseServer {
       socket: {
         data(socket: Socket, data: Buffer) {
           const message = messageService.receive(data);
-          console.log(`Received data: ${message}`);
+          LoggerService.info(`Received data: ${message}`);
           messageService.send(Buffer.from("PONG"), socket);
         },
         open(socket: Socket) {
-          console.log("Client connected");
+          LoggerService.success("Client connected");
         },
         close(socket) {
-          console.log("Connection closed");
+          LoggerService.error("Connection closed");
         },
         error(socket, error) {
-          console.error("Error occurred:", error);
+          LoggerService.error(`Error occurred: ${error.message}`);
           socket.write(`Error occurred: ${error.message}`);
         },
       },
