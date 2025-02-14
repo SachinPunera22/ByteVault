@@ -1,4 +1,4 @@
-import { DatabaseServer } from "./server-init";
+import { DatabaseServer } from "./database-server";
 
 const serverDB = new DatabaseServer();
 serverDB
