@@ -1,5 +1,6 @@
-import type { TCPSocket } from "bun";
+import type { Socket, TCPSocket } from "bun";
 import { ClientConfiguration } from "./config/config";
+import { MessageService } from "./client-message";
 
 export class DatabaseClient {
   private socket!: TCPSocket;
@@ -18,15 +19,19 @@ export class DatabaseClient {
       const hostname: string = config.get("hostname", "localhost");
       const port: number = Number(config.get("port", "4000"));
 
+      const messageService = new MessageService();
+
       this.socket = await Bun.connect({
         hostname,
         port,
         socket: {
-          open: () => {
+          open: (socket: Socket) => {
             console.log(`Client connected to ${hostname}:${port}`);
+            messageService.send(Buffer.from("PING"), socket);
           },
-          data: (socket, data) => {
-            console.log("Received data from server:", data.toString());
+          data: (socket: Socket, data: Buffer) => {
+            const message = messageService.receive(data);
+            console.log("Received data from server:", message);
           },
           close: () => {
             console.log("Connection closed");
