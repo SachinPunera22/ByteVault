@@ -2,11 +2,17 @@ import type { Socket, TCPSocket } from "bun";
 import { ClientConfiguration } from "./config/config";
 import { MessageService } from "./client-message";
 import LoggerService from "./utils/logger-service";
+import { AuthenticationService } from "./authentication/authentication-service";
 
 export class DatabaseClient {
   private socket!: TCPSocket;
+  private authService: AuthenticationService;
+  private messageService: MessageService;
 
-  constructor() {}
+  constructor() {
+    this.authService = new AuthenticationService();
+    this.messageService = new MessageService();
+  }
 
   /**
    * Starts the client connection to the server
@@ -33,8 +39,18 @@ export class DatabaseClient {
               resolve();
             },
             data: (socket: Socket, data: Buffer) => {
-              const message = messageService.receive(data);
+              const message = this.messageService.receive(data);
               LoggerService.info(`Received data from server: ${message}`);
+              if (message === "PONG") {
+                LoggerService.success("Server responded with PONG!");
+
+                this.authService.login(socket, "testuser", "password123");
+              } else if (message === "OK") {
+                LoggerService.success("Authentication Successful");
+              } else if (message.startsWith("ERR")) {
+                LoggerService.error(`Authentication Failed: ${message}`);
+              }
+            
             },
             close: () => {
               LoggerService.error("Connection closed");

@@ -2,10 +2,17 @@ import type { Socket, TCPSocketListener } from "bun";
 import { ServerConfiguration } from "./config/config";
 import { MessageService } from "./sever-message";
 import LoggerService from "./utils/logger-service";
+import { AuthenticationService } from "./authentication/authentication-service";
 
 export class DatabaseServer {
   public server!: TCPSocketListener;
-  constructor() {}
+  private authService: AuthenticationService;
+  private messageService: MessageService;
+
+  constructor() {
+    this.authService = new AuthenticationService();
+    this.messageService = new MessageService();
+  }
 
   /**
    * starts a server
@@ -20,10 +27,17 @@ export class DatabaseServer {
       hostname: config.get("hostname", "localhost"),
       port: +config.get("port", "4000"),
       socket: {
-        data(socket: Socket, data: Buffer) {
-          const message = messageService.receive(data);
+        data: (socket: Socket, data: Buffer) => {
+          const message = this.messageService.receive(data);
           LoggerService.info(`Received data: ${message}`);
-          messageService.send(Buffer.from("PONG"), socket);
+
+          if (message === "PING") {
+            LoggerService.info("Received PING, sending PONG...");
+            this.messageService.send(Buffer.from("PONG"), socket);
+          } else {
+            LoggerService.info("Handling authentication request...");
+            this.authService.handleAuthRequest(socket, data);
+          }
         },
         open(socket: Socket) {
           LoggerService.success("Client connected");
