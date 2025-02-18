@@ -3,15 +3,19 @@ import { ClientConfiguration } from "./config/config";
 import { MessageService } from "./client-message";
 import LoggerService from "./utils/logger-service";
 import { AuthenticationService } from "./authentication/authentication-service";
+import { EventEmitter } from "events";
 
-export class DatabaseClient {
+export class DatabaseClient extends EventEmitter {
   private socket!: TCPSocket;
   private authService: AuthenticationService;
   private messageService: MessageService;
+  
 
   constructor() {
-    this.authService = new AuthenticationService();
+    super();
+    this.authService = new AuthenticationService(this);
     this.messageService = new MessageService();
+   
   }
 
   /**
@@ -34,30 +38,29 @@ export class DatabaseClient {
           port,
           socket: {
             open: (socket: Socket) => {
-              LoggerService.success(`Client connected to ${hostname}:${port}`);
-              messageService.send(Buffer.from("PING"), socket);
-              resolve();
+             LoggerService.success(`Client connected to ${hostname}:${port}`);
+             const authPayload = JSON.stringify({ username: "testuser", password: "password123" });
+             LoggerService.info(`Sending authentication request: ${authPayload}`);
+       
+             const { username, password } = JSON.parse(authPayload);
+             this.authService.login(socket, username, password);  
+       
+             resolve();
             },
             data: (socket: Socket, data: Buffer) => {
               const message = this.messageService.receive(data);
               LoggerService.info(`Received data from server: ${message}`);
-              if (message === "PONG") {
-                LoggerService.success("Server responded with PONG!");
-
-                this.authService.login(socket, "testuser", "password123");
-              } else if (message === "OK") {
-                LoggerService.success("Authentication Successful");
-              } else if (message.startsWith("ERR")) {
-                LoggerService.error(`Authentication Failed: ${message}`);
-              }
+              this.emit("server-message", socket, message);
             
             },
             close: () => {
               LoggerService.error("Connection closed");
+              this.emit("disconnected");
               reject(new Error("Connection closed unexpectedly"));
             },
             error: (socket, error) => {
               LoggerService.error(`Error occurred: ${error.message}`);
+              this.emit("error", error);
               reject(error);
             },
           },

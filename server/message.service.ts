@@ -1,8 +1,11 @@
 import type { Socket } from "bun";
 import { End, Start } from "./constants";
+import {EventEmitter} from 'events'
 
-export class MessageService {
-  constructor() {}
+export class MessageService extends EventEmitter {
+  constructor( ) {
+    super();
+  }
 
   public send(message: Buffer, socket: Socket) {
     const messageLength = message.length;
@@ -16,7 +19,16 @@ export class MessageService {
     socket.write(messageBuffer);
   }
 
-  public receive(buffer: Buffer) {
+  public receive(socket:Socket, buffer: Buffer) {
+    const messageBuffer = Buffer.alloc(buffer.length - 2);
+    buffer.copy(messageBuffer, 0, 1, buffer.length - 1);
+    let code = 'auth-init'
+    this.emit(code, messageBuffer)
+
+    // return messageBuffer.toString();
+  }
+
+  public error(socket:Socket, buffer: Buffer) {
     const messageBuffer = Buffer.alloc(buffer.length - 2);
     buffer.copy(messageBuffer, 0, 1, buffer.length - 1);
     return messageBuffer.toString();
