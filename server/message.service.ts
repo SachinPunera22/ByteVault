@@ -1,6 +1,7 @@
 import type { Socket } from "bun";
 import { End, Start } from "./constants";
 import {EventEmitter} from 'events'
+import {systemEventService} from "./events/systemEvent.service.ts";
 
 export class MessageService extends EventEmitter {
   constructor( ) {
@@ -23,7 +24,7 @@ export class MessageService extends EventEmitter {
     const messageBuffer = Buffer.alloc(buffer.length - 2);
     buffer.copy(messageBuffer, 0, 1, buffer.length - 1);
     let code = 'auth-init'
-    this.emit(code, messageBuffer)
+    systemEventService.emit(code, {data:messageBuffer,socket})
 
     // return messageBuffer.toString();
   }

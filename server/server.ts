@@ -8,14 +8,14 @@ import LoggerService from "./utils/logger-service";
 const messageService = new MessageService();
 
 const socket:any = {
-  data: messageService.receive,
+  data: messageService.receive.bind(messageService),
   open: (socket: Socket) => {
     LoggerService.success("Client connected");
   },
   close: (socket: Socket) => {
     LoggerService.error("Connection closed");
   },
-  error: messageService.error
+  error: messageService.error.bind(messageService)
 }
 
 const serverDB = new DatabaseServer();
@@ -24,7 +24,7 @@ serverDB
   .then((server) => {
     LoggerService.success(`Server started on port: ${server.port}`);
     const authService = new AuthenticationService(messageService, serverDB);
-    authService.initAuth()
+    authService.initAuth();
   })
   .catch((error) => {
     LoggerService.error(`Error occured: ${error}`);

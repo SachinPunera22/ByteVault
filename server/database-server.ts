@@ -11,12 +11,11 @@ export interface ISocket  {
    
 
 };
-export class DatabaseServer extends EventEmitter {
+export class DatabaseServer {
   public server!: TCPSocketListener<ISocket>;
   private messageService: MessageService;
 
   constructor() {
-    super();
     this.messageService = new MessageService();
   }
 
