@@ -28,11 +28,7 @@ export class MessageService extends EventEmitter {
     }
 
     public receive(socket: Socket, rawPayload: Buffer) {
-        console.log('data:', rawPayload.toString('utf-8'))
         const payload = this.parsePayload(rawPayload)
-        console.log("Payload:",this.parsePayload(rawPayload))
-
-        console.log('payload:', payload)
         systemEventService.emit(payload.command, {data: payload.message, socket})
     }
 
