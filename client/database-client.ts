@@ -16,7 +16,7 @@ export class DatabaseClient {
      * Starts the client connection to the server
      * @returns {Promise<void>}
      */
-    public async connectToServer(socket): Promise<TCPSocket> {
+    public async connectToServer(socket:Socket): Promise<TCPSocket> {
         try {
             const config = new ClientConfiguration();
             await config.readConfig(); // Load configuration file

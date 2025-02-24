@@ -1,56 +1,67 @@
 import type { Socket } from "bun";
-import { End, Start } from "./constants";
 import LoggerService from "../server/utils/logger-service.ts";
-import {systemEventService} from "./events/systemEvent.service.ts";
+import { ServerStatusByte, StatusByte } from "./constants";
+import { systemEventService } from "./events/systemEvent.service.ts";
 
 export class MessageService {
   constructor() {}
 
-  public send(payload: { command: string, message: Buffer  }, socket: Socket) {
-    const startBuffer = Buffer.from(Start, "hex"); // 2 bytes
-    const endBuffer = Buffer.from(End, "hex");   // 2 bytes
-
-    const commandBuffer = Buffer.alloc(10, 0x20); // 10-byte command buffer
-    commandBuffer.write(payload.command, "utf-8"); // Writing command
-
-
-    const messageLength = payload.message.length;
-    const totalLength = startBuffer.length  + commandBuffer.length + messageLength + endBuffer.length;
+  public send(
+    payload: { command: any; message: Buffer | null },
+    socket: Socket
+  ) {
+    const startBuffer = Buffer.alloc(1);
+    startBuffer.write(StatusByte.START, "hex");
+    const endBuffer = Buffer.alloc(1);
+    endBuffer.write(StatusByte.END, "hex");
+    const commandBuffer = Buffer.alloc(10, 0x20);
+    commandBuffer.write(payload.command, "utf-8");
+    const messageLength = payload.message?.length || 0;
+    const totalLength =
+      startBuffer.length +
+      commandBuffer.length +
+      messageLength +
+      endBuffer.length;
 
     const finalBuffer = Buffer.concat(
-        [startBuffer, commandBuffer,payload.message, endBuffer],
-        totalLength
+      [startBuffer, commandBuffer, payload.message!, endBuffer],
+      totalLength
     );
     socket.write(finalBuffer);
   }
 
-
   public receive(socket: Socket, rawPayload: Buffer) {
-    const payload=this.parsePayload(rawPayload)
-    systemEventService.emit(payload.command, {data: payload.message, socket})
+    const payload = this.parsePayload(rawPayload);
+    systemEventService.emit(payload.command, { data: payload.message, socket });
   }
 
-  public error(socket: Socket, error:any) {
-    const errorMessage = JSON.stringify(error?.message||error)
-    LoggerService.error(errorMessage)
+  public error(socket: Socket, error: any) {
+    const errorMessage = JSON.stringify(error?.message || error);
+    LoggerService.error(errorMessage);
   }
 
-  private  parsePayload(buffer: Buffer): { command: string;code:string; message: Buffer } {
-    const startBuffer = buffer.subarray(0, 2); // 2 bytes
-    const codeBuffer = buffer.subarray(2, 12); // 10 bytes
-    const commandBuffer = buffer.subarray(12, 22); // 10 bytes
-    const endBuffer = buffer.subarray(-2); // 2 bytes
-    const messageBuffer = buffer.subarray(22, -2); // Variable length message
-
-    // return {
-    //   command: commandBuffer.toString("utf-8").trim(),
-    //   code: codeBuffer.toString('utf-8').trim(),
-    //   message: messageBuffer
-    // };
-    return {
-      command:'pong',
-      code:'SUCCESS',
-      message:Buffer.from('pong')
+  private parsePayload(buffer: Buffer): {
+    command: string;
+    code: string;
+    message: Buffer;
+  } {
+    const startBuffer = buffer.subarray(0, 1); // 1 bytes
+    const commandBuffer = buffer.subarray(1, 11); // 10 bytes
+    const endBuffer = buffer.subarray(-1); // 1 bytes
+    const messageBuffer = buffer.subarray(11, -1); // Variable length message
+    if (
+      startBuffer.toString("hex") !== ServerStatusByte.OK ||
+      startBuffer.toString("hex") !== ServerStatusByte.ERROR && endBuffer.toString("hex") !== ServerStatusByte.End
+    ) {
+      LoggerService.error("Error reading message from server");
     }
+    let code =
+      startBuffer.toString("hex") !== ServerStatusByte.OK ? "ERROR" : "SUCCESS";
+
+    return {
+      command: commandBuffer.toString("utf-8").trim(),
+      code,
+      message: messageBuffer,
+    };
   }
 }
