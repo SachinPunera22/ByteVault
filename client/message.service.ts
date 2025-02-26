@@ -14,8 +14,8 @@ export class MessageService {
     startBuffer.write(StatusByte.START, "hex");
     const endBuffer = Buffer.alloc(1);
     endBuffer.write(StatusByte.END, "hex");
-    const commandBuffer = Buffer.alloc(10, 0x20);
-    commandBuffer.write(payload.command, "utf-8");
+    const commandBuffer = Buffer.alloc(2);     // 2 bytes
+    commandBuffer.write(payload.command, "hex");
     const messageLength = payload.message?.length || 0;
     const totalLength =
       startBuffer.length +
@@ -46,20 +46,20 @@ export class MessageService {
     message: Buffer;
   } {
     const startBuffer = buffer.subarray(0, 1); // 1 bytes
-    const commandBuffer = buffer.subarray(1, 11); // 10 bytes
+    const commandBuffer = buffer.subarray(1, 3); // 2 bytes
     const endBuffer = buffer.subarray(-1); // 1 bytes
-    const messageBuffer = buffer.subarray(11, -1); // Variable length message
+    const messageBuffer = buffer.subarray(3, -1); // Variable length message
     if (
       startBuffer.toString("hex") !== ServerStatusByte.OK ||
-      startBuffer.toString("hex") !== ServerStatusByte.ERROR && endBuffer.toString("hex") !== ServerStatusByte.End
+      (startBuffer.toString("hex") !== ServerStatusByte.ERROR &&
+        endBuffer.toString("hex") !== ServerStatusByte.End)
     ) {
       LoggerService.error("Error reading message from server");
     }
     let code =
       startBuffer.toString("hex") !== ServerStatusByte.OK ? "ERROR" : "SUCCESS";
-
     return {
-      command: commandBuffer.toString("utf-8").trim(),
+      command: commandBuffer.toString("hex").trim(),
       code,
       message: messageBuffer,
     };

@@ -1,9 +1,9 @@
 export enum ClientCommands {
-  PING = "ping",
+  PING = "0010",
 }
 
 export enum ServerCommands {
-  PONG = "pong",
+  PONG = "0010",
 }
 
 export enum ServerStatusByte {
