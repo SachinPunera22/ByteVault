@@ -20,7 +20,7 @@ export class HealthService {
   }
 
   public async setupListener() {
-    systemEventService.on("ping", () => this.checkConnection);
+    systemEventService.on("ping", () => this.checkConnection());
     systemEventService.on(ServerCommands.PONG, () => {
       LoggerService.success("pong");
     });

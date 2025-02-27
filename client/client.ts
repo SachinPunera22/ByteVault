@@ -3,6 +3,7 @@ import LoggerService from "./utils/logger-service";
 import type { Socket } from "bun";
 import { MessageService } from "./message.service.ts";
 import { HealthService } from "./utils/health.service.ts";
+import { ClientCliService } from "./utils/client-cli.service.ts";
 
 const messageService = new MessageService();
 const socket: any = {
@@ -22,17 +23,11 @@ client
   .then((socketInstance) => {
     LoggerService.success("Client successfully connected to the server.");
     const healthService = new HealthService(socketInstance, messageService);
+    healthService.checkConnection();
 
     process.stdin.on("data", (input: Buffer) => {
       let msg = input.toString().trim().toLowerCase();
-      switch (msg) {
-        case "ping":
-          healthService.checkConnection();
-          break;
-        default:
-          LoggerService.log(`Input from terminal: ${input}`);
-          break;
-      }
+      ClientCliService.getInstance().clientEvents(msg);
     });
   })
   .catch((error) => {
