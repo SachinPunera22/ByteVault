@@ -2,12 +2,7 @@ import type { Socket } from "bun";
 import { EventEmitter } from "events";
 import { systemEventService } from "./events/systemEvent.service.ts";
 import LoggerService from "./utils/logger-service.ts";
-import {
-  ClientCommands,
-  ClientStatusByte,
-  ServerCommands,
-  StatusByte,
-} from "./constants.ts";
+import { ClientStatusByte, StatusByte } from "./constants.ts";
 
 export class MessageService extends EventEmitter {
   constructor() {
