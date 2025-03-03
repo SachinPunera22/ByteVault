@@ -1,36 +1,42 @@
-import type { Socket, TCPSocketListener } from "bun";
+import type { Socket } from "bun";
 import LoggerService from "../utils/logger-service";
 import { MessageService } from "../message.service";
-import { EventEmitter } from "events";
-import type { DatabaseServer } from "../database-server";
-import {systemEventService} from "../events/systemEvent.service.ts";
+import { systemEventService } from "../events/systemEvent.service.ts";
+import { SocketService } from "../utils/socket.service.ts";// Import Singleton SocketService
 
 export class AuthenticationService {
-  public server:any ;
-  constructor(protected messageService:MessageService,protected databaseServer:DatabaseServer) {
-    this.server = databaseServer.server;
+  private socketService: SocketService; // Store the SocketService instance
+
+  constructor(private messageService: MessageService) {
+    this.socketService = SocketService.getInstance(); // Get singleton instance
   }
 
   /**
    * Handles authentication request from client
    */
-  public handleAuthRequest(auth:{data: Buffer, socket: any}) {
+  public handleAuthRequest(auth: { data: Buffer; socket: Socket }) {
     try {
       LoggerService.info("Checking auth...");
 
-      this.messageService.send({command:'auth-res', code :'SUCCESS', message: Buffer.from("OK")}, auth.socket);
-      LoggerService.info("Auth Success...");
+      this.messageService.send(
+        { command: "auth-res", code: "SUCCESS", message: Buffer.from("OK") },
+        auth.socket
+      );
 
+      LoggerService.info("Auth Success...");
     } catch (error) {
-      console.log('error:',error)
       LoggerService.error("Invalid authentication data");
-      this.messageService.send({
-        message: Buffer.from("ERR: Invalid authentication data"),
-        code:'ERROR',
-        command:'auth'
-      }, auth.socket);
+
+      this.messageService.send(
+        {
+          command: "auth",
+          code: "ERROR",
+          message: Buffer.from("ERR: Invalid authentication data"),
+        },
+        auth.socket
+      );
+
       auth.socket.end();
-      // this.emit("close-connection", "Invalid authentication data");
     }
   }
 
@@ -38,12 +44,10 @@ export class AuthenticationService {
    * Registers event listeners for managing authentication state
    */
   public initAuth() {
-    LoggerService.info("Handling authentication request...");
+    LoggerService.info("Initializing authentication...");
 
-    systemEventService.on("auth-init", (data:any) => {
+    systemEventService.on("auth-init", (data: any) => {
       this.handleAuthRequest(data);
     });
-
-
   }
 }
