@@ -5,6 +5,7 @@ import LoggerService from "./utils/logger-service";
 import { systemEventService } from "./events/systemEvent.service.ts";
 import { ClientCommands, ServerCommands } from "./constants.ts";
 import { SocketService } from "./utils/socket.service.ts";
+import { DatabaseMetaService } from "./database-meta.service.ts";
 
 const messageService = new MessageService();
 const socketService = SocketService.getInstance();
@@ -21,6 +22,7 @@ socketService
   .startServer(socketHandlers)
   .then((server: any) => {
     setupHealthCheckListener();
+    new DatabaseMetaService()
     // const authService = new AuthenticationService(messageService, socketService);
     // authService.initAuth();
   })
