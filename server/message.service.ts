@@ -26,8 +26,8 @@ export class MessageService extends EventEmitter {
     }
     const endBuffer = Buffer.alloc(1); // 1 bytes
     endBuffer.write(StatusByte.End, "hex");
-    const commandBuffer = Buffer.alloc(10, 0x20); // 10-byte command buffer
-    commandBuffer.write(payload.command, "utf-8"); // Writing command
+    const commandBuffer = Buffer.alloc(2); // 2-byte command buffer
+    commandBuffer.write(payload.command, "hex"); // Writing command
     const messageLength = payload.message?.length || 0;
     const totalLength =
       startBuffer.length +
@@ -55,9 +55,9 @@ export class MessageService extends EventEmitter {
   private parsePayload(buffer: Buffer): { command: string; message: Buffer } {
     const startBuffer = buffer.subarray(0, 1); // 1 bytes
 
-    const commandBuffer = buffer.subarray(1, 11); // 10 bytes
+    const commandBuffer = buffer.subarray(1, 3); // 2 bytes
     const endBuffer = buffer.subarray(-1); // 1 bytes
-    const messageBuffer = buffer.subarray(11, -1); // Variable length message
+    const messageBuffer = buffer.subarray(3, -1); // Variable length message
     if (
       startBuffer.toString("hex") !== ClientStatusByte.START ||
       endBuffer.toString("hex") !== ClientStatusByte.END
@@ -65,7 +65,7 @@ export class MessageService extends EventEmitter {
       LoggerService.error("message from client is not valid");
     }
     return {
-      command: commandBuffer.toString("utf-8").trim(),
+      command: commandBuffer.toString("hex").trim(),
       message: messageBuffer,
     };
   }
