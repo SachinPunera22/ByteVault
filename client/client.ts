@@ -4,6 +4,7 @@ import { MessageService } from "./message.service.ts";
 import { HealthService } from "./utils/health.service.ts";
 import { parseCliArguments } from "./utils/cli-parser.ts";
 import type { Socket } from "bun";
+import { ClientCliService } from "./utils/client-cli.service.ts";
 
 // Parse CLI arguments
 const cliArguments = parseCliArguments();
@@ -27,6 +28,10 @@ clientSocketService
     );
     const healthService = new HealthService(messageService);
     healthService.checkConnection();
+    process.stdin.on("data", (input: Buffer) => {
+      let msg = input.toString().trim().toLowerCase();
+      ClientCliService.getInstance().clientEvents(msg);
+    });
   })
   .catch((error) => {
     LoggerService.error(`Connection failed: ${error}`);
