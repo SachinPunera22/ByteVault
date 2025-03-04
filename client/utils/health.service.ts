@@ -15,7 +15,9 @@ export class HealthService {
   public checkConnection() {
     return this.messageService.send(
       { command: ClientCommands.PING, message: Buffer.from("ping") },
-      this.socketService.getClientSocket() // Use singleton socket
+      this.socketService.getClientSocket(), // Use singleton socket
+      2,
+      true
     );
   }
 
