@@ -1,5 +1,10 @@
 import LoggerService from "../server/utils/logger-service.ts";
-import { ServerStatusByte, StatusByte } from "./constants";
+import {
+  EventState,
+  ServerStatusByte,
+  StatusByte,
+  type EventConfigurationInterface,
+} from "./constants";
 import type { Socket } from "bun";
 import { systemEventService } from "./events/systemEvent.service";
 
@@ -7,20 +12,23 @@ export class MessageService {
   private retryCount = 0;
   private retryTimeout: ReturnType<typeof setTimeout> | null = null;
   private waitingForResponse = false;
+  public eventState = EventState.INACTIVE;
+  static instance: MessageService;
   constructor() {}
+
+  public static getInstance(): MessageService {
+    if (!MessageService.instance) {
+      MessageService.instance = new MessageService();
+    }
+    return MessageService.instance;
+  }
 
   public send(
     payload: { command: any; message: Buffer | null },
     socket: Socket,
-    maxRetries: number = 3,
-    isNewEvent: boolean = false
+    eventConfiguration?: EventConfigurationInterface
   ) {
-    if (this.waitingForResponse && isNewEvent) {
-      LoggerService.error(
-        "Cannot send new request. Waiting for previous response."
-      );
-      return;
-    }
+    this.eventState = EventState.ACTIVE;
     this.waitingForResponse = true;
     const startBuffer = Buffer.alloc(1);
     startBuffer.write(StatusByte.START, "hex");
@@ -40,28 +48,25 @@ export class MessageService {
       totalLength
     );
     socket.write(finalBuffer);
-    this.setRetryTimeout(payload, socket, maxRetries);
+    if (eventConfiguration)
+      this.setRetryTimeout(payload, socket, eventConfiguration);
   }
 
   private setRetryTimeout(
     payload: { command: any; message: Buffer | null },
     socket: Socket,
-    maxRetries: number
+    eventConfiguration: EventConfigurationInterface
   ) {
     this.retryTimeout = setTimeout(() => {
-      if (this.retryCount < maxRetries) {
+      if (this.retryCount < eventConfiguration.maxRetries) {
         this.retryCount++;
-
-        LoggerService.error(
-          `Server not responding. Retrying... Attempt ${this.retryCount}`
-        );
-        this.send(payload, socket, maxRetries);
-        this.setRetryTimeout(payload, socket, maxRetries);
+        this.send(payload, socket, eventConfiguration);
       } else {
         LoggerService.error("Max retries reached. Closing connection.");
         socket.end();
+        return;
       }
-    }, 30000);
+    }, 3000);
   }
 
   public receive(socket: Socket, rawPayload: Buffer) {
@@ -70,6 +75,7 @@ export class MessageService {
     const payload = this.parsePayload(rawPayload);
     systemEventService.emit(payload.command, { data: payload.message, socket });
     this.retryCount = 0;
+    this.eventState = EventState.INACTIVE;
   }
 
   public error(socket: Socket, error: any) {

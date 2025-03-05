@@ -1,10 +1,15 @@
+import { ClientEvents, EventState } from "../constants";
 import { systemEventService } from "../events/systemEvent.service";
+import { MessageService } from "../message.service";
 import LoggerService from "./logger-service";
 
 export class ClientCliService {
   private static instance: ClientCliService | null = null;
+  private messageService: MessageService;
 
-  private constructor() {}
+  private constructor() {
+    this.messageService = MessageService.getInstance();
+  }
 
   public static getInstance(): ClientCliService {
     if (!ClientCliService.instance) {
@@ -13,11 +18,19 @@ export class ClientCliService {
     return ClientCliService.instance;
   }
 
+  public startListening() {
+    process.stdin.on("data", (input: Buffer) => {
+      let msg = input.toString().trim().toLowerCase();
+      if (this.messageService.eventState === EventState.INACTIVE)
+        this.clientEvents(msg);
+    });
+  }
+
   public async clientEvents(event: string) {
-    try {
+    if (ClientEvents.includes(event)) {
       systemEventService.emit(event);
-    } catch (error) {
-      LoggerService.error(`Fail to get event: ${error}`);
+    } else {
+      LoggerService.error(`Invalid Command`);
     }
   }
 }
