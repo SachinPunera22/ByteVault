@@ -16,3 +16,14 @@ export enum StatusByte {
   START = "00",
   END = "81",
 }
+
+export const ClientEvents = ["ping"];
+
+export enum EventState {
+  ACTIVE = "active",
+  INACTIVE = "inactive",
+}
+
+export interface EventConfigurationInterface {
+  maxRetries: number;
+}

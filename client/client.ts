@@ -10,7 +10,7 @@ import { ClientCliService } from "./utils/client-cli.service.ts";
 const cliArguments = parseCliArguments();
 
 // Set up services
-const messageService = new MessageService();
+const messageService = MessageService.getInstance();
 const socketHandlers: any = {
   data: messageService.receive.bind(messageService),
   open: (socket: Socket) => LoggerService.success("Client connected"),
@@ -28,10 +28,7 @@ clientSocketService
     );
     const healthService = new HealthService(messageService);
     healthService.checkConnection();
-    process.stdin.on("data", (input: Buffer) => {
-      let msg = input.toString().trim().toLowerCase();
-      ClientCliService.getInstance().clientEvents(msg);
-    });
+    ClientCliService.getInstance().startListening();
   })
   .catch((error) => {
     LoggerService.error(`Connection failed: ${error}`);
