@@ -3,12 +3,13 @@ import { AuthenticationService } from "./authentication/authentication-service";
 import { MessageService } from "./message.service";
 import LoggerService from "./utils/logger-service";
 import { systemEventService } from "./events/systemEvent.service.ts";
-import { ClientCommands, ServerCommands } from "./constants.ts";
+import { ClientCommands, ServerCommands, StatusCode } from "./constants.ts";
 import { SocketService } from "./utils/socket.service.ts";
 import { DatabaseMetaService } from "./database-meta.service.ts";
 
 const messageService = new MessageService();
 const socketService = SocketService.getInstance();
+const authenticationService=AuthenticationService.getInstance()
 
 // Define socket event handlers
 const socketHandlers: any = {
@@ -23,8 +24,6 @@ socketService
   .then((server: any) => {
     setupHealthCheckListener();
     new DatabaseMetaService()
-    // const authService = new AuthenticationService(messageService, socketService);
-    // authService.initAuth();
   })
   .catch((error: any) => LoggerService.error(`Error occurred: ${error}`));
 
@@ -35,7 +34,7 @@ function setupHealthCheckListener() {
       {
         command: ServerCommands.PONG,
         message: Buffer.from("pong"),
-        code: "SUCCESS",
+        code: StatusCode.SUCCESS,
       },
       socket
     );

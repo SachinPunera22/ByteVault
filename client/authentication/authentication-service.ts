@@ -3,42 +3,45 @@ import { MessageService } from "../message.service.ts";
 import LoggerService from "../utils/logger-service";
 import { EventEmitter } from "events";
 import type { TCPSocket } from "bun";
+import { systemEventService } from "../events/systemEvent.service.ts";
+import { ClientCommands, StatusCode, ServerCommands } from "../constants.ts";
 
-export class AuthenticationService extends EventEmitter {
+enum AuthStatus {
+  INITIATED = "initiated",
+  NOT_INITIALISED = "notInitialised",
+  CONNECTED = "connected",
+}
+export class AuthenticationService {
   private messageService: MessageService;
-  private authStatus: "initiated" | "connected" = "initiated";
+  private authStatus: AuthStatus = AuthStatus.NOT_INITIALISED;
   private timeoutHandle: ReturnType<typeof setTimeout> | null = null;
   private socketService: ClientSocketService;
   private clientSocket: TCPSocket;
+  static instance: AuthenticationService;
 
-  constructor(eventEmitter: EventEmitter) {
-    super();
-    this.messageService = new MessageService();
+  constructor() {
+    this.messageService = MessageService.getInstance();
     this.socketService = ClientSocketService.getInstance();
-    this.clientSocket = this.socketService.getClientSocket(); 
+    this.clientSocket = this.socketService.getClientSocket();
+    this.setupListener();
+  }
 
-    eventEmitter.on("server-message", (message: string) => {
-      this.handleAuthResponse(message);
-    });
-
-    eventEmitter.on("disconnected", () => {
-      LoggerService.error("Disconnected from the server.");
-    });
-
-    eventEmitter.on("error", (error: Error) => {
-      LoggerService.error(`Error occurred: ${error.message}`);
-    });
+  public static getInstance(): AuthenticationService {
+    if (!AuthenticationService.instance) {
+      AuthenticationService.instance = new AuthenticationService();
+    }
+    return AuthenticationService.instance;
   }
 
   /**
    * Sends login credentials to the server
    */
-  public login(username: string, password: string) {
-    const loginData = JSON.stringify({ code: "auth-init", username, password });
+  public login() {
+    // const loginData = JSON.stringify({ code: "auth-init", username, password });
 
-    LoggerService.info(`Sending authentication request for ${username}`);
+    // LoggerService.info(`Sending authentication request for ${username}`);
     this.messageService.send(
-      { message: Buffer.from(loginData), command: "auth-res" },
+      { command: "auth-init", message: null },
       this.clientSocket
     );
 
@@ -47,22 +50,43 @@ export class AuthenticationService extends EventEmitter {
         LoggerService.error("Authentication timeout. Closing connection.");
         this.clientSocket.end();
       }
-    }, 30000);
+    }, 3000);
   }
 
   /**
-   * Handles server response for authentication
+   * initialise authenticaiton
    */
-  public handleAuthResponse(message: string) {
-    if (message === "OK") {
-      this.authStatus = "connected";
-      if (this.timeoutHandle) clearTimeout(this.timeoutHandle);
-      LoggerService.success("Authentication successful!");
-      this.emit("authenticated");
-    } else if (message.startsWith("ERR")) {
-      LoggerService.error(`Authentication failed: ${message}`);
-      this.emit("authentication-failed", message);
-      this.clientSocket.end();
-    }
+  public initAuth() {
+    LoggerService.info("Initializing authentication...");
+    this.messageService.send(
+      {
+        command: ClientCommands.AUTH_INIT,
+        message: Buffer.from("initiate authentication"),
+      },
+      this.clientSocket
+    );
+    this.authStatus = AuthStatus.INITIATED;
+    this.timeoutHandle = setTimeout(() => {
+      if (this.authStatus === "initiated") {
+        LoggerService.error("Authentication timeout. Closing connection.");
+        this.clientSocket.end();
+      }
+    }, 5000);
+  }
+
+  public async setupListener() {
+    systemEventService.on(
+      ServerCommands.AUTH_RESPONSE,
+      ({ data, code, socket }) => {
+        if (code.toString() == StatusCode.ERROR) {
+          this.authStatus = AuthStatus.NOT_INITIALISED;
+          LoggerService.error(data.toString());
+          socket.end();
+        } else {
+          this.authStatus = AuthStatus.CONNECTED;
+          LoggerService.success("client authenticated sucessfully");
+        }
+      }
+    );
   }
 }
