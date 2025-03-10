@@ -39,6 +39,6 @@ function setupHealthCheckListener() {
         code: StatusCode.SUCCESS,
       },
       socket
-    );
+    );    
   });
 }

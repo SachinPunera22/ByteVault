@@ -72,7 +72,6 @@ export class AuthenticationService {
         username: this.config.get("username"),
         password: this.config.get("password"),
       };
-
       const authData = JSON.parse(auth.data.toString());
       if (authData.username !== userData.username) {
         throw Error;
@@ -117,4 +116,5 @@ export class AuthenticationService {
       this.handleAuthRequest({ data, socket });
     });
   }
+
 }
