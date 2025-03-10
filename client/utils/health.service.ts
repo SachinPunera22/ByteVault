@@ -3,15 +3,20 @@ import { MessageService } from "../message.service.ts";
 import { systemEventService } from "../events/systemEvent.service.ts";
 import LoggerService from "./logger-service.ts";
 import { ClientCommands, ServerCommands } from "../constants.ts";
-import { AuthenticationService } from "../authentication/authentication-service.ts";
+import {
+  AuthenticationService,
+  AuthStatus,
+} from "../authentication/authentication-service.ts";
 
 export class HealthService {
   private socketService: ClientSocketService;
-  private messageService:MessageService;
+  private messageService: MessageService;
+  private authenticationService: AuthenticationService;
 
   constructor() {
-    this.messageService = MessageService.getInstance()
+    this.messageService = MessageService.getInstance();
     this.socketService = ClientSocketService.getInstance();
+    this.authenticationService = AuthenticationService.getInstance();
     this.setupListener();
   }
 
@@ -27,8 +32,9 @@ export class HealthService {
     systemEventService.on("ping", () => this.checkConnection());
     systemEventService.on(ServerCommands.PONG, () => {
       LoggerService.success("pong");
-      const authenticationService = AuthenticationService.getInstance()      
-          authenticationService.initAuth();
+      if (this.authenticationService.authStatus == AuthStatus.NOT_INITIALISED) {
+        this.authenticationService.initAuth();
+      }
     });
   }
 }

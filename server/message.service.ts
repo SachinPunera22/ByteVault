@@ -3,11 +3,11 @@ import { EventEmitter } from "events";
 import { systemEventService } from "./events/systemEvent.service.ts";
 import LoggerService from "./utils/logger-service.ts";
 import { ClientStatusByte, StatusByte, StatusCode } from "./constants.ts";
+import * as crypto from "node:crypto";
 
 export class MessageService {
   static instance: MessageService;
-  constructor() {
-  }
+  constructor() {}
   public static getInstance(): MessageService {
     if (!MessageService.instance) {
       MessageService.instance = new MessageService();

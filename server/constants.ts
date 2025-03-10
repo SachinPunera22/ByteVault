@@ -1,11 +1,13 @@
 export enum ServerCommands {
-  PONG="pong",
-  AUTH_RESPONSE="auth-res"
+  PONG = "pong",
+  AUTH_ACK = "auth-ack",
+  AUTH_RESPONSE = "auth-res",
 }
 
 export enum ClientCommands {
-  PING="ping",
-  AUTH_INIT='auth-init'
+  PING = "ping",
+  AUTH_INIT = "auth-init",
+  AUTH = "auth",
 }
 
 export enum StatusByte {

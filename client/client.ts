@@ -25,7 +25,7 @@ clientSocketService
   .connect(socketHandlers, cliArguments)
   .then((clientSocket) => {
     LoggerService.success(
-      `Client successfully connected to ${cliArguments.host}:${cliArguments.port}`
+      `Client successfully connected to ${cliArguments.hostname}:${cliArguments.port}`
     );
     const healthService = new HealthService();
     healthService.checkConnection();
