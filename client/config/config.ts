@@ -6,22 +6,25 @@ export interface IConfig {
   password: string;
   username: string;
   cli_arguments: {
-    host: string;
+    hostname: string;
+    username: string;
     port: number;
     password: string;
-  }
+  };
 }
 export class ClientConfiguration {
+  static instance: ClientConfiguration;
   private config: IConfig = {
     hostname: "",
     port: 0,
     password: "",
     username: "",
     cli_arguments: {
-      host: "",
+      hostname: "",
+      username: "",
       port: 0,
-      password: ""
-    }
+      password: "",
+    },
   };
   private configFilePath = `${import.meta.dir}/client-config.cnf`;
 
@@ -62,12 +65,19 @@ export class ClientConfiguration {
   }
 
   /**
-  * Returns value of a key from the config file
-  * @param key
-  * @param value
-  */
+   * Returns value of a key from the config file
+   * @param key
+   * @param value
+   */
   public set<K extends keyof IConfig>(key: K, value: IConfig[K]): void {
     // set config value
     this.config[key] = value;
+  }
+
+  public static getInstance(): ClientConfiguration {
+    if (!ClientConfiguration.instance) {
+      ClientConfiguration.instance = new ClientConfiguration();
+    }
+    return ClientConfiguration.instance;
   }
 }

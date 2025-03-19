@@ -3,6 +3,7 @@ import {
   EventState,
   ServerStatusByte,
   StatusByte,
+  StatusCode,
   type EventConfigurationInterface,
 } from "./constants";
 import type { Socket } from "bun";
@@ -73,7 +74,11 @@ export class MessageService {
     if (this.retryTimeout) clearTimeout(this.retryTimeout);
     this.waitingForResponse = false;
     const payload = this.parsePayload(rawPayload);
-    systemEventService.emit(payload.command, { data: payload.message, socket });
+    systemEventService.emit(payload.command, {
+      code: payload.code,
+      data: payload.message,
+      socket,
+    });
     this.retryCount = 0;
     this.eventState = EventState.INACTIVE;
   }
@@ -94,14 +99,15 @@ export class MessageService {
     const messageBuffer = buffer.subarray(11, -1); // Variable length message
 
     if (
-      startBuffer.toString("hex") !== ServerStatusByte.OK ||
-      (startBuffer.toString("hex") !== ServerStatusByte.ERROR &&
-        endBuffer.toString("hex") !== ServerStatusByte.End)
+      startBuffer.toString("hex") !== ServerStatusByte.OK &&
+      startBuffer.toString("hex") !== ServerStatusByte.ERROR
     ) {
       LoggerService.error("Error reading message from server");
     }
     let code =
-      startBuffer.toString("hex") !== ServerStatusByte.OK ? "ERROR" : "SUCCESS";
+      startBuffer.toString("hex") !== ServerStatusByte.OK
+        ? StatusCode.ERROR
+        : StatusCode.SUCCESS;
 
     return {
       command: commandBuffer.toString("utf-8").trim(),

@@ -8,7 +8,7 @@ export class ClientSocketService {
   private configService: ClientConfiguration;
 
   private constructor() {
-    this.configService = new ClientConfiguration();
+    this.configService = ClientConfiguration.getInstance();
   }
 
   public static getInstance(): ClientSocketService {
@@ -23,7 +23,12 @@ export class ClientSocketService {
    */
   public async connect(
     socketHandlers: any,
-    cliArguments: { host: string; port: number; password: string }
+    cliArguments: {
+      hostname: string;
+      username: string;
+      port: number;
+      password: string;
+    }
   ): Promise<TCPSocket> {
     if (this.clientSocket) {
       LoggerService.info("Client socket already connected...");
@@ -33,12 +38,14 @@ export class ClientSocketService {
     try {
       this.configService.set("cli_arguments", cliArguments);
       this.clientSocket = await Bun.connect({
-        hostname: cliArguments.host,
+        hostname: cliArguments.hostname,
         port: cliArguments.port,
         socket: socketHandlers,
       });
 
-      LoggerService.success(`Connected to server at ${cliArguments.host}:${cliArguments.port}`);
+      LoggerService.success(
+        `Connected to server at ${cliArguments.hostname}:${cliArguments.port}`
+      );
       return this.clientSocket;
     } catch (error) {
       LoggerService.error(`Failed to connect to server: ${error}`);

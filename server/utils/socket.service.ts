@@ -4,8 +4,11 @@ import { ServerConfiguration } from "../config/config";
 
 export class SocketService {
   private static instance: SocketService;
+  private config: ServerConfiguration;
   private serverSocket!: TCPSocketListener<any>; // Server socket instance
-  private constructor() {}
+  private constructor() {
+    this.config = ServerConfiguration.getInstance();
+  }
 
   public static getInstance(): SocketService {
     if (!SocketService.instance) {
@@ -20,12 +23,11 @@ export class SocketService {
       return this.serverSocket;
     }
 
-    const config = new ServerConfiguration();
-    await config.readConfig();
+    await this.config.readConfig();
 
     this.serverSocket = Bun.listen<any>({
-      hostname: config.get("hostname", "localhost"),
-      port: +config.get("port", "4000"),
+      hostname: this.config.get("hostname", "localhost"),
+      port: +this.config.get("port", "4000"),
       socket: socketHandlers,
     });
 

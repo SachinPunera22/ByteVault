@@ -2,14 +2,27 @@ import LoggerService from "./logger-service";
 
 /**
  * Parses and validates command-line arguments for the client.
- * @returns {host: string, port: number, password: string}
+ * @returns {host: string, port: number, username :string, password: string}
  */
-export function parseCliArguments(): { host: string; port: number; password: string } {
+export function parseCliArguments(): {
+  hostname: string;
+  username: string;
+  port: number;
+  password: string;
+} {
   const argv = process.argv.slice(2);
 
-  if (argv.length !== 6 || argv[0] !== "-u" || argv[2] !== "-p" || argv[4] !== "-ps") {
+  if (
+    argv.length !== 8 ||
+    argv[0] !== "-h" ||
+    argv[2] !== "-p" ||
+    argv[4] !== "-u" ||
+    argv[6] !== "-ps"
+  ) {
     LoggerService.error("Invalid command format.");
-    LoggerService.error("Usage: bun run start:client -u <hostname> -p <port> -ps <password>");
+    LoggerService.error(
+      "Usage: bun run start:client -h <hostname> -p <port> -u <username> -ps <password>"
+    );
     process.exit(1);
   }
 
@@ -19,10 +32,10 @@ export function parseCliArguments(): { host: string; port: number; password: str
     LoggerService.error("Port must be a valid number.");
     process.exit(1);
   }
-
   return {
-    host: argv[1],
+    hostname: argv[1],
     port: port,
-    password: argv[5],
+    username: argv[5],
+    password: argv[7],
   };
 }

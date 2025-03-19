@@ -2,11 +2,17 @@ import type { Socket } from "bun";
 import { EventEmitter } from "events";
 import { systemEventService } from "./events/systemEvent.service.ts";
 import LoggerService from "./utils/logger-service.ts";
-import { ClientStatusByte, StatusByte } from "./constants.ts";
+import { ClientStatusByte, StatusByte, StatusCode } from "./constants.ts";
+import * as crypto from "node:crypto";
 
-export class MessageService extends EventEmitter {
-  constructor() {
-    super();
+export class MessageService {
+  static instance: MessageService;
+  constructor() {}
+  public static getInstance(): MessageService {
+    if (!MessageService.instance) {
+      MessageService.instance = new MessageService();
+    }
+    return MessageService.instance;
   }
 
   public send(
@@ -15,10 +21,10 @@ export class MessageService extends EventEmitter {
   ) {
     let startBuffer = Buffer.alloc(1, StatusByte.OK);
     switch (payload.code) {
-      case "SUCCESS":
+      case StatusCode.SUCCESS:
         startBuffer.write(StatusByte.OK, "hex");
         break;
-      case "ERROR":
+      case StatusCode.ERROR:
         startBuffer.write(StatusByte.ERROR, "hex");
         break;
       default:
