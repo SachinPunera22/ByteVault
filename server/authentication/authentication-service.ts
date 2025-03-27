@@ -116,5 +116,4 @@ export class AuthenticationService {
       this.handleAuthRequest({ data, socket });
     });
   }
-
 }

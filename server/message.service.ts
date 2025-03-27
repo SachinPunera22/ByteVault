@@ -8,7 +8,6 @@ import {
   StatusByte,
   StatusCode,
 } from "./constants.ts";
-import * as crypto from "node:crypto";
 
 export class MessageService {
   static instance: MessageService;

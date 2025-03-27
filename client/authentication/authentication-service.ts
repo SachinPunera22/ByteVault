@@ -2,7 +2,7 @@ import { ClientSocketService } from "../utils/socket.service";
 import { MessageService } from "../message.service.ts";
 import LoggerService from "../utils/logger-service";
 import { EventEmitter } from "events";
-import { password, type TCPSocket } from "bun";
+import type { TCPSocket } from "bun";
 import { systemEventService } from "../events/systemEvent.service.ts";
 import { ClientCommands, StatusCode, ServerCommands } from "../constants.ts";
 import { ClientConfiguration } from "../config/config.ts";
