@@ -1,9 +1,13 @@
 export enum ClientCommands {
   PING = "ping",
+  AUTH_INIT = "auth-init",
+  AUTH = "auth",
 }
 
 export enum ServerCommands {
   PONG = "pong",
+  AUTH_RESPONSE = "auth-res",
+  AUTH_ACK = "auth-ack",
 }
 
 export enum ServerStatusByte {
@@ -26,4 +30,9 @@ export enum EventState {
 
 export interface EventConfigurationInterface {
   maxRetries: number;
+}
+
+export enum StatusCode {
+  SUCCESS = "SUCCESS",
+  ERROR = "ERROR",
 }

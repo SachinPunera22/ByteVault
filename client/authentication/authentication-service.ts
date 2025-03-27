@@ -3,66 +3,126 @@ import { MessageService } from "../message.service.ts";
 import LoggerService from "../utils/logger-service";
 import { EventEmitter } from "events";
 import type { TCPSocket } from "bun";
+import { systemEventService } from "../events/systemEvent.service.ts";
+import { ClientCommands, StatusCode, ServerCommands } from "../constants.ts";
+import { ClientConfiguration } from "../config/config.ts";
+import * as crypto from "node:crypto";
+import {
+  HashEncryptService,
+  type EncryptionData,
+} from "../utils/hash-encrypt.service.ts";
 
-export class AuthenticationService extends EventEmitter {
+export enum AuthStatus {
+  INITIATED = "initiated",
+  NOT_INITIALISED = "notInitialised",
+  ACKNOwLEDGED = "acknowledged",
+  AUTHENTICATED = "authenticated",
+  WAITING = "waiting",
+}
+export class AuthenticationService {
   private messageService: MessageService;
-  private authStatus: "initiated" | "connected" = "initiated";
+  public authStatus: AuthStatus = AuthStatus.NOT_INITIALISED;
   private timeoutHandle: ReturnType<typeof setTimeout> | null = null;
   private socketService: ClientSocketService;
   private clientSocket: TCPSocket;
+  static instance: AuthenticationService;
+  private config: ClientConfiguration;
+  private hashEncyptService: HashEncryptService;
 
-  constructor(eventEmitter: EventEmitter) {
-    super();
-    this.messageService = new MessageService();
+  constructor() {
+    this.messageService = MessageService.getInstance();
     this.socketService = ClientSocketService.getInstance();
-    this.clientSocket = this.socketService.getClientSocket(); 
+    this.clientSocket = this.socketService.getClientSocket();
+    this.config = ClientConfiguration.getInstance();
+    this.hashEncyptService = new HashEncryptService();
+    this.setupListener();
+  }
 
-    eventEmitter.on("server-message", (message: string) => {
-      this.handleAuthResponse(message);
-    });
-
-    eventEmitter.on("disconnected", () => {
-      LoggerService.error("Disconnected from the server.");
-    });
-
-    eventEmitter.on("error", (error: Error) => {
-      LoggerService.error(`Error occurred: ${error.message}`);
-    });
+  public static getInstance(): AuthenticationService {
+    if (!AuthenticationService.instance) {
+      AuthenticationService.instance = new AuthenticationService();
+    }
+    return AuthenticationService.instance;
   }
 
   /**
    * Sends login credentials to the server
    */
-  public login(username: string, password: string) {
-    const loginData = JSON.stringify({ code: "auth-init", username, password });
-
-    LoggerService.info(`Sending authentication request for ${username}`);
+  public login(data: Buffer) {
+    LoggerService.info("send authentication credentials");
+    const encryptionData: EncryptionData = JSON.parse(data.toString());
+    const cliData = this.config.get("cli_arguments");
+    const encryptedPassword = this.hashEncyptService.encrypt(
+      encryptionData,
+      cliData.password
+    );
+    const userData = {
+      username: cliData.username,
+      password: encryptedPassword,
+    };
     this.messageService.send(
-      { message: Buffer.from(loginData), command: "auth-res" },
+      {
+        command: ClientCommands.AUTH,
+        message: Buffer.from(JSON.stringify(userData)),
+      },
       this.clientSocket
     );
+    this.authStatus = AuthStatus.WAITING;
+    this.timeoutHandle = setTimeout(() => {
+      if (this.authStatus === AuthStatus.WAITING) {
+        LoggerService.error("Authentication timeout. Closing connection.");
+        this.clientSocket.end();
+      }
+    }, 5000);
+  }
 
+  /**
+   * initialise authenticaiton
+   */
+  public initAuth() {
+    LoggerService.info("Initializing authentication...");
+    const cliData = this.config.get("cli_arguments");
+    const authInitData = { username: cliData.username };
+    this.messageService.send(
+      {
+        command: ClientCommands.AUTH_INIT,
+        message: Buffer.from(JSON.stringify(authInitData)),
+      },
+      this.clientSocket
+    );
+    this.authStatus = AuthStatus.INITIATED;
     this.timeoutHandle = setTimeout(() => {
       if (this.authStatus === "initiated") {
         LoggerService.error("Authentication timeout. Closing connection.");
         this.clientSocket.end();
       }
-    }, 30000);
+    }, 3000);
   }
 
-  /**
-   * Handles server response for authentication
-   */
-  public handleAuthResponse(message: string) {
-    if (message === "OK") {
-      this.authStatus = "connected";
-      if (this.timeoutHandle) clearTimeout(this.timeoutHandle);
-      LoggerService.success("Authentication successful!");
-      this.emit("authenticated");
-    } else if (message.startsWith("ERR")) {
-      LoggerService.error(`Authentication failed: ${message}`);
-      this.emit("authentication-failed", message);
-      this.clientSocket.end();
-    }
+  public async setupListener() {
+    systemEventService.on(ServerCommands.AUTH_ACK, ({ data, code, socket }) => {
+      if (code.toString() == StatusCode.ERROR) {
+        this.authStatus = AuthStatus.NOT_INITIALISED;
+        LoggerService.error(data.toString());
+        socket.end();
+      } else {
+        this.authStatus = AuthStatus.ACKNOwLEDGED;
+        this.login(data);
+      }
+    });
+
+    systemEventService.on(
+      ServerCommands.AUTH_RESPONSE,
+      ({ data, code, socket }) => {
+        if (code.toString() == StatusCode.ERROR) {
+          this.authStatus = AuthStatus.NOT_INITIALISED;
+          LoggerService.error(data.toString());
+          socket.end();
+        } else {
+          this.authStatus = AuthStatus.AUTHENTICATED;
+          LoggerService.success("client authenticated");
+        }
+      }
+    );
   }
 }

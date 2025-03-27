@@ -5,6 +5,7 @@ import { HealthService } from "./utils/health.service.ts";
 import { parseCliArguments } from "./utils/cli-parser.ts";
 import type { Socket } from "bun";
 import { ClientCliService } from "./utils/client-cli.service.ts";
+import { AuthenticationService } from "./authentication/authentication-service.ts";
 
 // Parse CLI arguments
 const cliArguments = parseCliArguments();
@@ -24,9 +25,9 @@ clientSocketService
   .connect(socketHandlers, cliArguments)
   .then((clientSocket) => {
     LoggerService.success(
-      `Client successfully connected to ${cliArguments.host}:${cliArguments.port}`
+      `Client successfully connected to ${cliArguments.hostname}:${cliArguments.port}`
     );
-    const healthService = new HealthService(messageService);
+    const healthService = new HealthService();
     healthService.checkConnection();
     ClientCliService.getInstance().startListening();
   })

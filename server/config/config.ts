@@ -2,6 +2,7 @@ import type { BunFile } from "bun";
 
 export class ServerConfiguration {
   private config: Record<string, string> = {};
+  static instance: ServerConfiguration;
 
   /**
    * Sets dynamic hostname and port in config
@@ -36,5 +37,12 @@ export class ServerConfiguration {
    */
   public get(key: string, defaultValue = ""): string {
     return this.config[key] || defaultValue;
+  }
+
+  public static getInstance(): ServerConfiguration {
+    if (!ServerConfiguration.instance) {
+      ServerConfiguration.instance = new ServerConfiguration();
+    }
+    return ServerConfiguration.instance;
   }
 }
