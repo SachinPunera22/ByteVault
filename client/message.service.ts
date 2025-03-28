@@ -98,7 +98,7 @@ export class MessageService {
     const endBuffer = buffer.subarray(-1); // 1 bytes
     const messageBuffer = buffer.subarray(3, -1); // Variable length message
     if (
-      startBuffer.toString("hex") !== ServerStatusByte.OK ||
+      startBuffer.toString("hex") !== ServerStatusByte.OK &&
       startBuffer.toString("hex") !== ServerStatusByte.ERROR
     ) {
       LoggerService.error("Error reading message from server");
