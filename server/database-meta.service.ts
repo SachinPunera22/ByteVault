@@ -3,11 +3,12 @@ export class DatabaseMetaService {
   private dbMeta;
 
   constructor() {
-    this.dbMeta = this.readMeta()
+    this.dbMeta = this.readMeta();
   }
 
-  public async saveMeta(databaseMeta:string) {
-    const stringBuffer = Buffer.from(databaseMeta, "utf-8");
+  public async saveMeta(databaseMeta: { [key: string]: any }) {
+    const databaseMetaString: string = this.convertToMetaString(databaseMeta);
+    const stringBuffer = Buffer.from(databaseMetaString, "utf-8");
     const fd = await fs.open("./server/storage/database.ibd", "w");
     await fs.writeFile(fd, stringBuffer, "binary");
     await fd.close();
@@ -21,7 +22,7 @@ export class DatabaseMetaService {
     const fd = await fs.open("./server/storage/database.ibd", "r");
     const data = await fs.readFile(fd);
     const metaData = data.toString("utf-8");
-    const [basicMetaString, tablesMetaString] = metaData.split("\n\n");   //split database basic meta and tables meta
+    const [basicMetaString, tablesMetaString] = metaData.split("\n\n"); //split database basic meta and tables meta
     const databaseMeta = this.convertToBasicMetaObject(basicMetaString);
     const tablesMeta = this.convertToTablesMetaObject(tablesMetaString);
     databaseMeta.tables = tablesMeta;
@@ -62,5 +63,53 @@ export class DatabaseMetaService {
       });
     }
     return tableMetaObject;
+  }
+  private convertToMetaString(databaseMeta: {
+    [x: string]: any;
+    tables?: any;
+  }): string {
+    const { tables, ...dbMeta } = databaseMeta;
+    const basicMetaString = this.convertToBasicMetaString(dbMeta);
+    const tablesMetaString = this.convertToTablesMetaString(tables);
+    const metaString= basicMetaString+'\n\n'+tablesMetaString
+    return metaString;
+  }
+
+  /**
+   *  converts the basic meta info object to string
+   * @param dbMeta 
+   * @returns 
+   */
+  private convertToBasicMetaString(dbMeta: { [key: string]: string }) {
+    const jsonString = JSON.stringify(dbMeta);
+    const newString = jsonString.replaceAll(",", "\n");
+    let metaString = "";
+    const extraSymbols = ["{", "}", `'`, `"`];
+    for (let i = 0; i < newString.length; i++) {
+      if (extraSymbols.includes(newString[i])) {
+        continue;
+      }
+      metaString += newString[i];
+    }
+    return metaString;
+  }
+
+  /**
+   * converts the tables meta object to string
+   * @param tables 
+   * @returns 
+   */
+  private convertToTablesMetaString(tables: { [key: string]: string }) {
+    const jsonString = JSON.stringify(tables);
+    const updateTablesString = jsonString.replaceAll(",", "\n");
+    const extraSymbols = ["{", "}", `'`, `"`, "[", "]"];
+    let tablesString = "";
+    for (let i = 0; i < updateTablesString.length; i++) {
+      if (extraSymbols.includes(updateTablesString[i])) {
+        continue;
+      }
+      tablesString += updateTablesString[i];
+    }
+    return tablesString;
   }
 }
