@@ -6,6 +6,7 @@ import { systemEventService } from "./events/systemEvent.service.ts";
 import { ClientCommands, ServerCommands } from "./constants.ts";
 import { SocketService } from "./utils/socket.service.ts";
 import { DatabaseMetaService } from "./database-meta.service.ts";
+import { CreateTableService } from "./database_operations/create-table/create_table.service.ts";
 
 const messageService = new MessageService();
 const socketService = SocketService.getInstance();
@@ -22,7 +23,8 @@ socketService
   .startServer(socketHandlers)
   .then((server: any) => {
     setupHealthCheckListener();
-    new DatabaseMetaService()
+    new DatabaseMetaService();
+    new CreateTableService().create("reviews");
     // const authService = new AuthenticationService(messageService, socketService);
     // authService.initAuth();
   })
