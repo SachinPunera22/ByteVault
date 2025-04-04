@@ -95,7 +95,6 @@ export class MessageService {
   } {
     const startBuffer = buffer.subarray(0, 1); // 1 bytes
     const commandBuffer = buffer.subarray(1, 3); // 2 bytes
-    const endBuffer = buffer.subarray(-1); // 1 bytes
     const messageBuffer = buffer.subarray(3, -1); // Variable length message
     if (
       startBuffer.toString("hex") !== ServerStatusByte.OK &&
