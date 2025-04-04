@@ -6,10 +6,12 @@ import { systemEventService } from "./events/systemEvent.service.ts";
 import { ClientCommands, ServerCommands, StatusCode } from "./constants.ts";
 import { SocketService } from "./utils/socket.service.ts";
 import { DatabaseMetaService } from "./database-meta.service.ts";
+import { QueryParserService } from "./utils/query-parser/query-parser-service.ts";
 
 const messageService = new MessageService();
 const socketService = SocketService.getInstance();
-const authenticationService=AuthenticationService.getInstance()
+const authenticationService = AuthenticationService.getInstance();
+const queryParserService = QueryParserService.getInstance();
 
 // Define socket event handlers
 const socketHandlers: any = {
@@ -23,7 +25,7 @@ socketService
   .startServer(socketHandlers)
   .then((server: any) => {
     setupHealthCheckListener();
-    new DatabaseMetaService()
+    new DatabaseMetaService();
   })
   .catch((error: any) => LoggerService.error(`Error occurred: ${error}`));
 
@@ -37,6 +39,6 @@ function setupHealthCheckListener() {
         code: StatusCode.SUCCESS,
       },
       socket
-    );    
+    );
   });
 }

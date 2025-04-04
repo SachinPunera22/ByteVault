@@ -2,7 +2,12 @@ import type { Socket } from "bun";
 import { EventEmitter } from "events";
 import { systemEventService } from "./events/systemEvent.service.ts";
 import LoggerService from "./utils/logger-service.ts";
-import { ClientStatusByte, StatusByte, StatusCode } from "./constants.ts";
+import {
+  ClientCommands,
+  ClientStatusByte,
+  StatusByte,
+  StatusCode,
+} from "./constants.ts";
 import * as crypto from "node:crypto";
 
 export class MessageService {
@@ -51,6 +56,10 @@ export class MessageService {
   public receive(socket: Socket, rawPayload: Buffer) {
     const payload = this.parsePayload(rawPayload);
     systemEventService.emit(payload.command, { data: payload.message, socket });
+    systemEventService.emit(ClientCommands.QUERY_EXECUTION, {
+      data: Buffer.from("Create tabl users ()", "utf-8"),
+      socket,
+    });
   }
 
   public error(socket: Socket, error: any) {
