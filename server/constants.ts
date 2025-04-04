@@ -1,3 +1,5 @@
+import type { Socket } from "bun";
+
 export enum ServerCommands {
   PONG = "0010",
   AUTH_ACK = "0013",
@@ -26,4 +28,19 @@ export enum ClientStatusByte {
 export enum StatusCode {
   SUCCESS = "SUCCESS",
   ERROR = "ERROR",
+}
+
+export const QueryTypes = ["create"];
+
+export enum QueryTypesEnum {
+  CREATE = "create",
+}
+
+export interface QueryResponseFormat {
+  status: StatusCode;
+  message: string;
+}
+
+export interface HandlerImplementation {
+  validate(query: { data: Buffer; socket: Socket }): QueryResponseFormat;
 }
