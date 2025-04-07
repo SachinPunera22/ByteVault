@@ -55,13 +55,6 @@ export class MessageService {
   public receive(socket: Socket, rawPayload: Buffer) {
     const payload = this.parsePayload(rawPayload);
     systemEventService.emit(payload.command, { data: payload.message, socket });
-    systemEventService.emit(ClientCommands.QUERY_EXECUTION, {
-      data: Buffer.from(
-        "CREATE TABLE USERS (ID INTEGER NOT NULL PRIMARY KEY, NAME VARCHAR NOT NULL);",
-        "utf-8"
-      ),
-      socket,
-    });
   }
 
   public error(socket: Socket, error: any) {

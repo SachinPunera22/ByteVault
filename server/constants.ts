@@ -30,17 +30,22 @@ export enum StatusCode {
   ERROR = "ERROR",
 }
 
-export const QueryTypes = ["create"];
+export const QueryTypes = ["CREATE"];
 
 export enum QueryTypesEnum {
-  CREATE = "create",
+  CREATE = "CREATE",
 }
 
 export interface QueryResponseFormat {
   status: StatusCode;
   message: string;
+  data?: RegExpMatchArray | null;
 }
 
 export interface HandlerImplementation {
   validate(query: { data: Buffer; socket: Socket }): QueryResponseFormat;
+}
+
+export interface ExecuteHandlerImplementation {
+  execute(query: RegExpMatchArray): Promise<QueryResponseFormat>;
 }

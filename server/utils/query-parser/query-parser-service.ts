@@ -12,9 +12,7 @@ import { QueryValidationMapper } from "./query-parser-mapper-service";
 
 export class QueryParserService {
   static instance: QueryParserService;
-  constructor() {
-    this.setUpQueryListener();
-  }
+  constructor() {}
 
   public static getInstance(): QueryParserService {
     if (!QueryParserService.instance) {
@@ -28,7 +26,7 @@ export class QueryParserService {
     socket: Socket;
   }): QueryResponseFormat {
     const requestQuery = query.data.toString();
-    const prefix = requestQuery.split(" ")[0].toLowerCase() as QueryTypesEnum;
+    const prefix = requestQuery.split(" ")[0].toUpperCase() as QueryTypesEnum;
     if (!QueryTypes.includes(prefix)) {
       LoggerService.error(
         `Invalid SQL syntax near ${requestQuery.split(" ")[0]}`
@@ -43,18 +41,9 @@ export class QueryParserService {
       LoggerService.error(`No handler found for prefix: ${prefix}`);
       return {
         status: StatusCode.ERROR,
-        message: `No handler found for prefix: ${prefix}`,
+        message: `Invalid SQL syntax near ${requestQuery.split(" ")[0]}`,
       };
     }
     return handler.validate(query);
-  }
-
-  public setUpQueryListener() {
-    systemEventService.on(
-      ClientCommands.QUERY_EXECUTION,
-      ({ data, socket }) => {
-        return this.validateQuerySyntax({ data, socket });
-      }
-    );
   }
 }
