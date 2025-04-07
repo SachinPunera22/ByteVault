@@ -2,9 +2,11 @@ export enum ClientCommands {
   PING = "0010",
   AUTH_INIT = "0011",
   AUTH = "0012",
+  QUERY_EXECUTION = "0016",
 }
 
 export enum ServerCommands {
+  QUERY_EXECUTION_RESPONSE = "0015",
   PONG = "0010",
   AUTH_ACK = "0013",
   AUTH_RESPONSE = "0014",
