@@ -12,9 +12,15 @@ const cliArguments = parseCliArguments();
 
 // Set up services
 const messageService = MessageService.getInstance();
+const clientCliService = ClientCliService.getInstance();
+
 const socketHandlers: any = {
-  data: messageService.receive.bind(messageService),
-  open: (socket: Socket) => LoggerService.success("Client connected"),
+  data: (socket: Socket, rawPayload: Buffer) =>
+    clientCliService.handleServerResponse(socket, rawPayload),
+  open: (socket: Socket) => {
+    clientCliService.initialize(socket);
+  },
+
   close: (socket: Socket) => LoggerService.error("Connection closed"),
   error: messageService.error.bind(messageService),
 };
@@ -24,9 +30,6 @@ const clientSocketService = ClientSocketService.getInstance();
 clientSocketService
   .connect(socketHandlers, cliArguments)
   .then((clientSocket) => {
-    LoggerService.success(
-      `Client successfully connected to ${cliArguments.hostname}:${cliArguments.port}`
-    );
     const healthService = new HealthService();
     healthService.checkConnection();
     ClientCliService.getInstance().startListening();
