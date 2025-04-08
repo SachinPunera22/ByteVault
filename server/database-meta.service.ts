@@ -71,7 +71,7 @@ export class DatabaseMetaService {
     const { tables, ...dbMeta } = databaseMeta;
     const basicMetaString = this.convertToBasicMetaString(dbMeta);
     const tablesMetaString = this.convertToTablesMetaString(tables);
-    const metaString= basicMetaString+'\n\n'+tablesMetaString
+    const metaString = basicMetaString + "\n\n" + tablesMetaString;
     return metaString;
   }
 
@@ -111,5 +111,15 @@ export class DatabaseMetaService {
       tablesString += updateTablesString[i];
     }
     return tablesString;
+  }
+
+  public async checkIfTableExists(
+    databaseMeta: { [key: string]: any },
+    tableName: string
+  ) {
+    const { tables, ...dbMeta } = databaseMeta;
+    const tableNames = tables.map((table: any) => table.Name);
+    if (tableNames.includes(tableName)) return true;
+    else return false;
   }
 }
