@@ -34,7 +34,7 @@ export class AuthenticationService {
     this.socketService = ClientSocketService.getInstance();
     this.clientSocket = this.socketService.getClientSocket();
     this.config = ClientConfiguration.getInstance();
-    this.hashEncyptService = new HashEncryptService();
+    this.hashEncyptService = HashEncryptService.getInstance();
     this.setupListener();
   }
 

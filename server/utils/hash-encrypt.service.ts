@@ -3,9 +3,15 @@ import { ServerConfiguration } from "../config/config";
 import * as crypto from "node:crypto";
 export class HashEncryptService {
   private config: ServerConfiguration;
-
+  static instance: HashEncryptService;
   constructor() {
     this.config = ServerConfiguration.getInstance();
+  }
+  public static getInstance(): HashEncryptService {
+    if (!HashEncryptService.instance) {
+      HashEncryptService.instance = new HashEncryptService();
+    }
+    return HashEncryptService.instance;
   }
 
   /**

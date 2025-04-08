@@ -2,8 +2,11 @@ import type { Socket } from "bun";
 import { EventEmitter } from "events";
 import { systemEventService } from "./events/systemEvent.service.ts";
 import LoggerService from "./utils/logger-service.ts";
-import { ClientStatusByte, StatusByte, StatusCode } from "./constants.ts";
-import * as crypto from "node:crypto";
+import {
+  ClientStatusByte,
+  StatusByte,
+  StatusCode,
+} from "./constants.ts";
 
 export class MessageService {
   static instance: MessageService;

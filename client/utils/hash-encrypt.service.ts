@@ -6,6 +6,16 @@ export interface EncryptionData {
   iv: string;
 }
 export class HashEncryptService {
+  static instance: HashEncryptService;
+  constructor() {}
+
+  public static getInstance(): HashEncryptService {
+    if (!HashEncryptService.instance) {
+      HashEncryptService.instance = new HashEncryptService();
+    }
+    return HashEncryptService.instance;
+  }
+
   /**
    * encypt the password
    * @param encryptionData

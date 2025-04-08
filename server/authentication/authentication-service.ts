@@ -19,7 +19,7 @@ export class AuthenticationService {
     this.socketService = SocketService.getInstance(); // Get singleton instance
     this.setUpAuthenticationListener();
     this.config = ServerConfiguration.getInstance();
-    this.hashEncryptService = new HashEncryptService();
+    this.hashEncryptService = HashEncryptService.getInstance();
   }
 
   public static getInstance(): AuthenticationService {
