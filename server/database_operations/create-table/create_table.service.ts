@@ -1,10 +1,10 @@
-import type { Socket } from "bun";
 import {
   StatusCode,
   type ExecuteHandlerImplementation,
   type QueryResponseFormat,
 } from "../../constants";
 import { DatabaseMetaService } from "../../database-meta.service";
+import LoggerService from "../../utils/logger-service";
 
 export class CreateTableService implements ExecuteHandlerImplementation {
   static instance: CreateTableService;
@@ -27,6 +27,14 @@ export class CreateTableService implements ExecuteHandlerImplementation {
   public async execute(query: RegExpMatchArray): Promise<QueryResponseFormat> {
     const tableName = query[1];
     const dbMeta = await this.databaseMetaService.readMeta();
+
+    if (await this.databaseMetaService.checkIfTableExists(dbMeta, tableName)) {
+      LoggerService.error("Table name already exists");
+      return {
+        status: StatusCode.ERROR,
+        message: "Table name already exists",
+      };
+    }
     const tableObj = {
       Name: tableName,
       path: `${tableName}.ibd`,
